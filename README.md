@@ -27,8 +27,15 @@ UI and API test automation for [Automation Exercise](https://www.automationexerc
 │   ├── payment.ts
 │   └── user.ts
 ├── tests/
-│   ├── api-test/api.spec.ts           # All API tests
-│   └── ui-test/ui.spec.ts             # All UI tests
+│   ├── api-test/
+│   │   ├── accounts/accounts.spec.ts  # create / verify / update / delete account
+│   │   └── products/products.spec.ts  # product list and search
+│   └── ui-test/
+│       ├── cart/cart.spec.ts          # dynamic cart behaviour
+│       ├── checkout/checkout.spec.ts  # product → cart → checkout → payment
+│       ├── dashboard/dashboard.spec.ts
+│       ├── login/login.spec.ts        # valid / invalid login, form guards
+│       └── signup/signup.spec.ts      # registration and signup guards
 └── playwright.config.ts
 ```
 
@@ -36,17 +43,19 @@ UI and API test automation for [Automation Exercise](https://www.automationexerc
 
 ## Test coverage
 
-### UI (`tests/ui-test/ui.spec.ts`)
+### UI (`tests/ui-test/<feature>/`)
 
 | Area | What is checked |
 | --- | --- |
-| Sign-in guards | Unknown credentials show an error; blank login form is blocked; badly formatted email is flagged; blank signup form is blocked |
-| Dynamic cart behaviour | Hover overlay reveals "Add to cart" and opens a confirmation modal; quantity chosen on the product page appears in the cart |
-| Storefront journey (serial) | New user signup, duplicate email rejected, login / logout / login, dashboard validation, select product → add to cart → checkout → payment → invoice download |
+| `login/` | Unknown credentials show an error; blank login form is blocked; badly formatted email is flagged; valid login / logout / login |
+| `signup/` | New user registration; duplicate email rejected; blank signup form is blocked |
+| `dashboard/` | Member name and account navigation are shown after sign-in |
+| `cart/` | Hover overlay reveals "Add to cart" and opens a confirmation modal; quantity chosen on the product page appears in the cart |
+| `checkout/` | Select product → add to cart → sign in → checkout → payment → invoice download |
 
-The storefront journey registers one faker user, reuses it across the flow and deletes it through the API when finished.
+Specs that need an account (login, dashboard, checkout) register their own faker user through the API in `beforeAll` and delete it in `afterAll`, so every spec is independent and can run in parallel.
 
-### API (`tests/api-test/api.spec.ts`)
+### API (`tests/api-test/<feature>/`)
 
 | API | Endpoint | Checks |
 | --- | --- | --- |
@@ -105,4 +114,5 @@ npm run allure:serve            # generate and serve in one step
 ## Notes
 
 - Only Chromium is enabled in `playwright.config.ts`; Firefox and WebKit are commented out and can be re-enabled there.
-- The UI storefront journey is `serial` because each step depends on the account created in the first step.
+- `signup` and `accounts` (API) are `serial` because later tests depend on the account created by the first one.
+- Workers are capped at 2 locally and 1 on CI, with 1 local retry (2 on CI). The site sometimes answers "heavy load (queue full)" when hit by too many parallel visitors, which looks like a test failure but isn't.

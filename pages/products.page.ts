@@ -27,9 +27,14 @@ export class ProductsPage {
     await this.ui.firstProductCard.hover();
   }
 
+  /** The overlay's click handler binds late on this site, so retry hover + click until the modal opens. */
   async addFirstProductFromOverlay(): Promise<void> {
-    await expect(this.ui.firstProductOverlayAdd).toBeVisible();
-    await this.ui.firstProductOverlayAdd.click();
+    await expect(async () => {
+      await this.hoverFirstProduct();
+      await expect(this.ui.firstProductOverlayAdd).toBeVisible({ timeout: 2000 });
+      await this.ui.firstProductOverlayAdd.click();
+      await expect(this.ui.cartModal).toBeVisible({ timeout: 3000 });
+    }).toPass({ timeout: 20000 });
   }
 
   async expectCartModalVisible(): Promise<void> {
